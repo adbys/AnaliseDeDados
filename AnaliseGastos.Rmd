@@ -1,0 +1,50 @@
+---
+title: "Análise gastos CEAP"
+author: "Adbys Vasconcelos"
+date: "25 de outubro de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+gastos <- read.csv("dadosCEAP.csv")
+gastos$valorGlosa <- as.numeric(sub(",", ".", gastos$valorGlosa, fixed = TRUE))
+
+gastosPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA") %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+
+ggplot(data = gastosPorPartido, aes(x = Partido, y = Gastos)) + geom_bar(stat = "identity")
+```
+
+
+## Atividade
+
+01 - Quais os partidos que mais fazem uso da CEAP? Quais os partidos que menos fazem uso? Mesmas perguntas conisderando valores em R$.
+02 - Quais os tipos de despesa mais comuns no uso da CEAP? Mesma pergunta considerando valores em R$.
+03 - Levando em conta o estado pelo qual o deputado se elegeu, quais os estados que mais fazem uso da CEAP? Quais os que menos fazem uso? Mesmas perguntas considerando gastos em R$. Por que você acha isso?
+04 - Quais os parlamentares que mais gastam com CEAP e quais os que menos gastam?
+05 - Existe correlação entre a quantidade de gastos no exterior e o valor restituído da CEAP? 
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
