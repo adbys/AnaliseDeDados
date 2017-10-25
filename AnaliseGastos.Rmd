@@ -17,7 +17,7 @@ gastos$valorGlosa <- as.numeric(sub(",", ".", gastos$valorGlosa, fixed = TRUE))
 
 gastosPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA") %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
 
-ggplot(data = gastosPorPartido, aes(x = Partido, y = Gastos)) + geom_bar(stat = "identity")
+ggplot(data = gastosPorPartido, aes(x =reorder(Partido, Gastos), y = Gastos)) + geom_bar(stat = "identity")
 ```
 
 
