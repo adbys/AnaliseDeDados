@@ -9,15 +9,73 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
+library(tidyr)
 ```
 
 ```{r}
 gastos <- read.csv("dadosCEAP.csv")
 gastos$valorGlosa <- as.numeric(sub(",", ".", gastos$valorGlosa, fixed = TRUE))
 
-gastosPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA") %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+gastosPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA", valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
 
-ggplot(data = gastosPorPartido, aes(x =reorder(Partido, Gastos), y = Gastos)) + geom_bar(stat = "identity")
+usoPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA", valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
+
+
+
+
+tipoDeDespesa <- gastos %>% group_by(Despesa = tipoDespesa) %>% filter(Despesa != "NA", valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+
+usoPorDespesa <- gastos %>% group_by(Despesa = tipoDespesa) %>% filter(Despesa != "NA", valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
+
+
+
+
+gastoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+
+usoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter (Estado != "NA", valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
+
+
+
+gastoPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+
+usoPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
+
+quantidadeDeGastoExterior <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0) %>% summarise(Quantidae = sum(tipoDocumento == 2)) %>% arrange(Parlamentar)
+
+
+
+
+
+ggplot(data = gastosPorPartido, aes(x =reorder(Partido, Gastos), y = Gastos)) + geom_bar(stat = "identity") + labs(title = "Quantidade gasta da CEAP por partido (R$)", x = "Partido", y = "Gasto(R$)") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data = usoPorPartido, aes(x =reorder(Partido, Uso), y = Uso)) + geom_bar(stat = "identity") + labs(title = "Quantidade de vezes que a CEAP foi utilizada por partido", x = "Partido", y = "Quantidade de vezes utilizada") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+ggplot(data = tipoDeDespesa, aes(x = reorder(Despesa, Gastos), y = Gastos)) + geom_bar(stat = "identity") + labs(title = "Quantidade gasta da CEAP por despesa", x = "Despesa", y = "Gasto(R$)") + coord_flip()
+
+ggplot(data = usoPorDespesa, aes(x = reorder(Despesa, Uso), y = Uso)) + geom_bar(stat = "identity") + labs(title = "Quantidade de vezes que a CEAP foi utilizada por despesa", x = "Despesa", y = "Quantidade de vezes utilizada") + coord_flip()
+
+
+
+
+ggplot(data = gastoPorEstado, aes(x = reorder(Estado, Gastos), y = Gastos)) + geom_bar(stat = "identity") +  labs(title = "Quantidade gasta da CEAP por Estado", x = "Estado", y = "Gasto(R$)")
+
+ggplot(data = usoPorEstado, aes(x = reorder(Estado, Uso), y = Uso)) + geom_bar(stat = "identity") +  labs(title = "Quantidade de vezes que a CEAP foi utilizada por Estado", x = "Estado", y = "Quantidade de vezes utilizada")
+
+
+
+ggplot(data = head(gastoPorParlamentar), aes(x = reorder(Parlamentar, Gastos), y = Gastos)) + geom_bar(stat = "identity") +  labs(title = "Deputados que menos fizeram uso da CEAP (R$)", x = "Parlamentar", y = "Gastos(R$)") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data = tail(gastoPorParlamentar), aes(x = reorder(Parlamentar, Gastos), y = Gastos)) + geom_bar(stat = "identity") +  labs(title = "Deputados que mais fizeram uso da CEAP (R$)", x = "Parlamentar", y = "Gastos (R$)") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+
+ggplot(data = head(usoPorParlamentar), aes(x = reorder(Parlamentar, Uso), y = Uso)) + geom_bar(stat = "identity") +  labs(title = "Deputados que menos fizeram uso da CEAP", x = "Parlamentar", y = "Quantidade de vezes utilizada") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data = tail(usoPorParlamentar), aes(x = reorder(Parlamentar, Uso), y = Uso)) + geom_bar(stat = "identity") +  labs(title = "Deputados que mais fizeram uso da CEAP", x = "Parlamentar", y = "Quantidade de vezes utilizada") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 ```
 
 
