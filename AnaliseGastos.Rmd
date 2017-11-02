@@ -10,61 +10,179 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-```
 
-```{r}
 gastos <- read.csv("dadosCEAP.csv")
 gastos$valorGlosa <- as.numeric(sub(",", ".", gastos$valorGlosa, fixed = TRUE))
 
-gastosPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA", valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+gastosPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
 
-usoPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA", valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
-
-
-
-
-tipoDeDespesa <- gastos %>% group_by(Despesa = tipoDespesa) %>% filter(Despesa != "NA", valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
-
-usoPorDespesa <- gastos %>% group_by(Despesa = tipoDespesa) %>% filter(Despesa != "NA", valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
+usoPorPartido <- gastos %>% group_by(Partido = sgPartido) %>% filter(Partido != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
 
 
 
 
-gastoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+tipoDeDespesa <- gastos %>% group_by(Despesa = tipoDespesa) %>% filter(Despesa != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
 
-usoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter (Estado != "NA", valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
-
-
-
-gastoPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
-
-usoPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
-
-quantidadeDeGastoExterior <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0) %>% summarise(Quantidae = sum(tipoDocumento == 2)) %>% arrange(Parlamentar)
+usoPorDespesa <- gastos %>% group_by(Despesa = tipoDespesa) %>% filter(Despesa != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
 
 
 
 
+gastoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
 
+boxPlotPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0, valorLíquido > 0)
+
+usoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
+
+
+
+gastoPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+
+usoPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(valorDocumento > 0, valorLíquido > 0) %>% summarise(Uso = sum(tipoDespesa != "NA")) %>% arrange(Uso)
+
+tiposDeGastos <- gastos %>% group_by(TipoDeGasto = tipoDocumento) %>% filter(valorDocumento > 0, valorLíquido > 0, tipoDocumento == 2) %>% summarise(GastoTotal = sum(valorLíquido)) 
+
+restituicao <- gastos %>% group_by(TipoDeGasto = tipoDocumento) %>% filter(valorDocumento < 0, valorLíquido < 0, tipoDocumento == 2) %>% summarise(Vezes = sum(valorLíquido))
+
+tiposDeRestituicao <- gastos %>% group_by(TipoDeGasto = tipoDocumento) %>% filter(valorDocumento > 0, valorLíquido > 0, tipoDocumento == 2) %>% summarise(Vezes = sum(tipoDocumento == 2))
+
+```
+
+Análise da Cota para Exercício da Atividade Parlamentar (CEAP)
+
+A Cota para Exercício da Atividade Parlamentar é uma cota única mensal que é destinada a custear gastos dos deputados exclusivamente vinculados ao exercício da atividade parlamentar.
+Fazendo uma análise exploratória dos dados da CEAP podemos perceber que os partidos que mais utilizam a cota são:
+
+      1 - PT;
+      2 - PMDB;
+      3 - PSDB;
+      4 - PP;
+      5 - PR;
+      
+Quando se trata da quantidade de dinheiro gasta pelos nossos representantes, temos o seguinte ranking por partidos:
+
+      1 - PMDB;
+      2 - PT;
+      3 - PSDB;
+      4 - PP;
+      5 - PR.
+
+O PMDB é o partido campeão em gastos com mais de 74 milhões de reais gastos da conta da CEAP, seguido pelo PT com mais de 70 milhões gastos, PSDB e PP com mais de 54 milões de reais e fechando a lista temos o PR com mais de 45 milhões de reais gastos.
+
+```{r}
 ggplot(data = gastosPorPartido, aes(x =reorder(Partido, Gastos), y = Gastos)) + geom_bar(stat = "identity") + labs(title = "Quantidade gasta da CEAP por partido (R$)", x = "Partido", y = "Gasto(R$)") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ggplot(data = usoPorPartido, aes(x =reorder(Partido, Uso), y = Uso)) + geom_bar(stat = "identity") + labs(title = "Quantidade de vezes que a CEAP foi utilizada por partido", x = "Partido", y = "Quantidade de vezes utilizada") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
+```
 
-ggplot(data = tipoDeDespesa, aes(x = reorder(Despesa, Gastos), y = Gastos)) + geom_bar(stat = "identity") + labs(title = "Quantidade gasta da CEAP por despesa", x = "Despesa", y = "Gasto(R$)") + coord_flip()
+Tendo como base o valor dos gastos que encontramos surge o seguinte questionamento: Em que tipo de despesas nossos representantes estão gastando tanto dinheiro?
 
-ggplot(data = usoPorDespesa, aes(x = reorder(Despesa, Uso), y = Uso)) + geom_bar(stat = "identity") + labs(title = "Quantidade de vezes que a CEAP foi utilizada por despesa", x = "Despesa", y = "Quantidade de vezes utilizada") + coord_flip()
+Percebemos que as depesas mais comuns são:
+
+      1 - Emissão de bilhetes aéreo;
+      2 - Combustíveis e Lubrificantes;
+      3 - Telefonia;
+      4 - Serviços postais;
+      5 - Serviçoes de táxi, pedágio e estacionamento.
+      
+Analisando as despesas em função de valores gastos temos uma pequena mudança no ranking acima:
+
+      1 - Emissão de bilhetes aéreo;
+      2 - Divulgação da atividade parlamentar;
+      3 - Locação ou fretamento de veículos automotores;
+      4 - Manuntenção de escritório de apoio à atividade parlamentar;
+      5 - Consultoria, pesquisas e trabalhos cientifícos.
+      
+Seguindo a tendência do ranking de uso, a Emissão de bilhetes aéreo é o serviço mais oneroso ao bolso do contribuinte que tem que desembolsar mais de 154 milhões reais para custear viagens dos parlamentares. Vale destacar que os outros tipos de gastos não estavam entre os 5 gastos mais comuns dos parlamentares, Divulgação da atividade parlamentar estava em 8 lugar dos gastos mais comuns mas figura em segundo lugar da lista das atividades mais caras com um gasto superior a  136 milhões reais, Locação ou fretamento de veículos automotores estava em 9 lugar e passa a ser o 3 gasto mais oneroso com mais de 69 milhões de reais gastos.
+
+```{r}
+ggplot(data = tipoDeDespesa, aes(x = reorder(Despesa, Gastos), y = Gastos)) + geom_bar(stat = "identity") + labs(title = "Quantidade gasta da CEAP por despesa(R$)", x = "Despesa", y = "Gasto(R$)") + coord_flip() + theme(plot.title = element_text(hjust = 1))
+
+ggplot(data = usoPorDespesa, aes(x = reorder(Despesa, Uso), y = Uso)) + geom_bar(stat = "identity") + labs(title = "Quantidade de vezes que a CEAP foi utilizada por despesa", x = "Despesa", y = "Quantidade de vezes utilizada") + coord_flip() + theme(plot.title = element_text(hjust = 1))
+
+```
+
+Analisando agora a distribuição de vezes em que a CEAP foi utilizada por estado pelo qual o parlamentar se elegeu, temos que os estados que mais utilizam o fundo são: 
+
+      1 - São Paulo;
+      2 - Minas Gerais;
+      3 - Rio Grande do Sul;
+      4 - Rio de Janeiro;
+      5 - Bahia.
+      
+Os estados que menos utilizam o fundo são:
+
+      1 - Distrito Federal;
+      2 - Amapá;
+      3 - Amazonas;
+      4 - Roraima;
+      5 - Tocantins.
 
 
+Já analisando pelo lado monetário, os estados que mais geram depesas:
 
+      1 - São Paulo;
+      2 - Minas Gerais;
+      3 - Rio de Janeiro;
+      4 - Bahia;
+      5 - Rio Grande do Sul.
+      
+Os estados que menos geram despesas são:
+
+      1 - Distrito Federal;
+      2 - Mato Grosso;
+      3 - Amapá;
+      4 - Sergipe;
+      5 - Tocantins.
+
+      
+Percebemos que como no caso dos gastos, o ranking por estado que mais recorre ao fundo não segue a mesma ordem do ranking de estado que mais gasta.
+Devemos isso ao fato da quantidade de parlamentares por estado e fazendo uma análise mais criteriosa dos dados de gasto por estados plotamos um gráfico do tipo boxplot que nós ajuda a visualizar melhor como os gastos estão distribuídos. A partir dos boxplots percebemos que existem muitos outliers nos estados que subiram algumas posições no ranking de gastos evidenciando assim que existem alguns parlamentares desses estados que gostam de gastar bem mais do que os seus conterrâneos.
+
+```{r}
+ggplot(data = usoPorEstado, aes(x = reorder(Estado, Uso), y = Uso)) + geom_bar(stat = "identity") +  labs(title = "Quantidade de vezes que a CEAP foi utilizada por Estado", x = "Estado", y = "Quantidade de vezes utilizada")
 
 ggplot(data = gastoPorEstado, aes(x = reorder(Estado, Gastos), y = Gastos)) + geom_bar(stat = "identity") +  labs(title = "Quantidade gasta da CEAP por Estado", x = "Estado", y = "Gasto(R$)")
 
-ggplot(data = usoPorEstado, aes(x = reorder(Estado, Uso), y = Uso)) + geom_bar(stat = "identity") +  labs(title = "Quantidade de vezes que a CEAP foi utilizada por Estado", x = "Estado", y = "Quantidade de vezes utilizada")
+ggplot(data = boxPlotPorEstado, aes(x = Estado, y = valorLíquido)) + geom_boxplot() + coord_cartesian(ylim = c(0, 3000)) +  labs(title = "Quantidade gasta da CEAP por Estado", x = "Estado", y = "Gasto(R$)")
 
+```
 
+Analisando individualmente os parlamentares, podemos destacar os que mais fizeram uso da CEAP:
 
+      1 - Diego Garcia;
+      2 - Miguel Lombardi;
+      3 - Zeca Dirceu;
+      4 - Jorge Tadeu Mudalen;
+      5 - Jorge Solla.
+      
+Já os que mais gastaram foram:
+
+      1 - Edio Lopes;
+      2 - Rocha;
+      3 - Abel Mesquita Jr;
+      4 - Alan Rick;
+      5 - Jhonatan de Jesus.
+      
+Os que menos utilizaram o fundo foram:
+
+      1 - Marcelo Almeida;
+      2 - Humberto Michiles;
+      3 - Eliseu Padilha;
+      4 - Dra Elaine Abissamra;
+      5 - Cesar Silvestri.
+      
+E os que menos gastaram:
+
+      1 - Camilo Cola;
+      2 - Eliseu Padilha;
+      3 - Marcio Monteiro;
+      4 - Marcelo Almeida;
+      5 - Renan Filho.
+      
+```{r}
 ggplot(data = head(gastoPorParlamentar), aes(x = reorder(Parlamentar, Gastos), y = Gastos)) + geom_bar(stat = "identity") +  labs(title = "Deputados que menos fizeram uso da CEAP (R$)", x = "Parlamentar", y = "Gastos(R$)") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ggplot(data = tail(gastoPorParlamentar), aes(x = reorder(Parlamentar, Gastos), y = Gastos)) + geom_bar(stat = "identity") +  labs(title = "Deputados que mais fizeram uso da CEAP (R$)", x = "Parlamentar", y = "Gastos (R$)") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -79,30 +197,18 @@ ggplot(data = tail(usoPorParlamentar), aes(x = reorder(Parlamentar, Uso), y = Us
 ```
 
 
-## Atividade
+Já visualizando os tipos de gastos, percebemos que 810 mil reais foram gastos no exterior e nenhum real desse valor foi restutuído aos cofres públicos. A CEAP foi utilizada 331 vezes para gastos no exterior.
 
-01 - Quais os partidos que mais fazem uso da CEAP? Quais os partidos que menos fazem uso? Mesmas perguntas conisderando valores em R$.
-02 - Quais os tipos de despesa mais comuns no uso da CEAP? Mesma pergunta considerando valores em R$.
-03 - Levando em conta o estado pelo qual o deputado se elegeu, quais os estados que mais fazem uso da CEAP? Quais os que menos fazem uso? Mesmas perguntas considerando gastos em R$. Por que você acha isso?
-04 - Quais os parlamentares que mais gastam com CEAP e quais os que menos gastam?
-05 - Existe correlação entre a quantidade de gastos no exterior e o valor restituído da CEAP? 
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+ggplot(data = tiposDeRestituicao, aes(x= "", y = Vezes)) + geom_bar(stat = "identity") +  labs(title = "Quantidade de vezes de gastos no exterior", x = "", y = "Quantidade de vezes utilizada")
 
-```{r cars}
-summary(cars)
+
+ggplot(data = tiposDeGastos, aes(x= "", y = GastoTotal)) + geom_bar(stat = "identity") +  labs(title = "Gastos total no exterior", x = "Despesa no exterior", y = "Valor gasto") +  coord_cartesian(ylim = c(0, 1000000))
+
+
+
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
