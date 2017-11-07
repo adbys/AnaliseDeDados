@@ -1,5 +1,5 @@
 ---
-title: "AnaliseCEAP"
+title: "Analise gastos CEAP - Novas Perguntas"
 author: "Adbys Vasconcelos"
 date: "06/11/2017"
 output: html_document
@@ -11,17 +11,20 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-library(sqldf)
 
 gastos <- read.csv("dadosCEAP.csv")
 
 
 gastos$valorGlosa <- as.numeric(sub(",", ".", gastos$valorGlosa, fixed = TRUE))
 
-formaDeUsoPorCategoria <- gastos %>% group_by(TipoDespesa = tipoDespesa) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) 
 
-gastoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+```
 
+Após a análise: "Análise da Cota para Exercício da Atividade Parlamentar (CEAP)"(http://rpubs.com/adbys/325534) surgem alguns questionamentos extras.
+
+Uma dúvida que surge é qual a região do país que mais gasta os recursos da CEAP. Para responder essa pegunta utilizamos um gráfico de pizza.
+
+```{r}
 
 totalGasto <- gastos %>% filter(sgUF != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(GastoTotal = sum(valorLíquido))
 
@@ -30,18 +33,33 @@ gastosPorRegiao <- gastos %>%  filter(sgUF != "NA", valorDocumento > 0, valorLí
                                    
 
 regiaolbls <- gastosPorRegiao$Regiao
-regiaolbls <- paste(lbls, round(gastosPorRegiao$Gastos, 2))
-regiaolbls <- paste(lbls,"%",sep="")
+regiaolbls <- paste(regiaolbls, round(gastosPorRegiao$Gastos, 2))
+regiaolbls <- paste(regiaolbls,"%",sep="")
 
 pie(gastosPorRegiao$Gastos, labels = regiaolbls, main = "Percentual de gastos da CEAP por região")
 
 
+```
 
+Pelo gráfico de pizza percebemos que a região Nordeste é a segunda região que mais utiliza os recursos da CEAP. Um fato curioso é que a primeira região que mais utiliza os recursos da CEAP é o sudeste. Para se ter uma ideia do tamanho dos gastos da região sudeste podemos fazer o comparativo com a região nordeste. Enquanto a região sudeste possui quatro estados, a região nordeste possui 9. Somando os gastos da região Sul que possui três estados e Norte que possui sete não é capaz de passar do gasto total dos parlamentares da região sudeste.
+
+Outra pergunta pertinente é se os gastos por categoria dos parlamentares do estado da Paraíba seguem um padrão de gastos. Agrupamos todos os gastos dos representantes do estado da Paraíba e traçamos um Boxplot.
+
+```{r}
+formaDeUsoPorCategoria <- gastos %>% group_by(TipoDespesa = tipoDespesa) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) 
 
 ggplot(formaDeUsoPorCategoria, aes(x = "", y = valorLíquido, fill=TipoDespesa)) + geom_boxplot()+  labs(title = "Distribuição dos gastos da CEAP no Estado da Paraíba", x = "Tipo de Gasto", y = "Gasto(R$)") + coord_cartesian(ylim = c(0, 30000)) + theme(legend.text = element_text(size=6))
 
 
+
 ```
+
+Para o Boxplot acima percebemos muitos outliers como também algumas categorias que os gastos nao seguem um padrão. Para os gastos seguirem um padrão temos que a caixa do Bloxplot deve ser simétrica e que cada uma de suas metades não tenham uma grande extensão. A categoria LOCAÇÃO OU FRETAMENTO DE AERONAVES foi a que teve um padrão melhor definido.
+
+Por fim vamos analisar se existe algum parlamentar paraibano que está gastando mais que seus conterrâneos. Traçamos um grafico de pizza onde cada parte corresponde ao percentual gasto por cada parlamentar.
+
+
+
 ```{r}
 
 totalGastoParaiba <- gastos %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(GastoTotal = sum(valorLíquido))
@@ -57,3 +75,4 @@ pie(tail(porcentagemGastaPorParlamentar$Gastos, n=14), labels = lbls, cex=0.7)
 
 ```
 
+Percebemos que os parlamentares que mais gastam seguem uma média. Vemos que dez parlamentares gastaram na faixa de 9.63% a 7.12% do dinheiro total gasto pelo estado. Desta forma não foi identificado nenhum outlier.
