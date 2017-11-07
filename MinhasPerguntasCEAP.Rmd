@@ -26,7 +26,9 @@ gastoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", 
 gastosPorRegiao <- gastos %>%  filter(sgUF != "NA", valorDocumento > 0, valorLíquido > 0) %>% mutate(Regiao = ifelse(sgUF == 'PB' | sgUF == 'PE' | sgUF == 'RN' | sgUF == 'CE' | sgUF == 'PI' | sgUF == 'BA' | sgUF == 'MA' | sgUF == 'SE' | sgUF == 'AL', 'NE', ifelse(sgUF == 'ES' | sgUF == 'RJ' | sgUF == 'MG' | sgUF == 'SP', 'SE', ifelse(sgUF == 'RS' | sgUF == 'PR' | sgUF == 'SC', 'S', ifelse(sgUF == 'MS' | sgUF == 'GO' | sgUF == 'MT' | sgUF == 'DF', 'CO', ifelse(sgUF == 'RO' | sgUF == 'AC' | sgUF == 'PA' | sgUF == 'AM' | sgUF == 'RR' | sgUF == 'AP' | sgUF == 'TO', 'N', 'NA')))))) %>% group_by(Regiao) %>% summarise(Gastos = sum(valorLíquido)) %>%  arrange(Gastos)
                                    
 
-pie(gastosPorRegiao$Gastos, labels = gastosPorRegiao$Regiao, main = "Percentual de gastos da CEAP por região")
+regiaolbls <- gastosPorRegiao$Regiao
+
+pie(gastosPorRegiao$Gastos, labels = regiaolbls, main = "Percentual de gastos da CEAP por região")
 
 
 
@@ -39,10 +41,14 @@ ggplot(formaDeUsoPorCategoria, aes(x = "", y = valorLíquido, fill=TipoDespesa))
 
 totalGasto <- gastos %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(GastoTotal = sum(valorLíquido))
 
-porcentagemGastaPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = (sum(valorLíquido)/totalGasto$GastoTotal) * 100) %>% arrange(Gastos)
+porcentagemGastaPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = ((sum(valorLíquido)/totalGasto$GastoTotal)) * 100) %>% arrange(Gastos)
 
+lbls <- porcentagemGastaPorParlamentar$Parlamentar
+lbls <- paste(lbls, round(porcentagemGastaPorParlamentar$Gastos, 2))
+lbls <- paste(lbls,"%",sep="")
 
-pie(porcentagemGastaPorParlamentar$Gastos, labels = porcentagemGastaPorParlamentar$Parlamentar)
+pie(porcentagemGastaPorParlamentar$Gastos, labels = lbls, cex=0.7)
+
 
 ```
 
