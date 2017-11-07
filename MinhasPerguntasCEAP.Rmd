@@ -23,10 +23,15 @@ formaDeUsoPorCategoria <- gastos %>% group_by(TipoDespesa = tipoDespesa) %>% fil
 gastoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
 
 
-gastosPorRegiao <- gastos %>%  filter(sgUF != "NA", valorDocumento > 0, valorLíquido > 0) %>% mutate(Regiao = ifelse(sgUF == 'PB' | sgUF == 'PE' | sgUF == 'RN' | sgUF == 'CE' | sgUF == 'PI' | sgUF == 'BA' | sgUF == 'MA' | sgUF == 'SE' | sgUF == 'AL', 'NE', ifelse(sgUF == 'ES' | sgUF == 'RJ' | sgUF == 'MG' | sgUF == 'SP', 'SE', ifelse(sgUF == 'RS' | sgUF == 'PR' | sgUF == 'SC', 'S', ifelse(sgUF == 'MS' | sgUF == 'GO' | sgUF == 'MT' | sgUF == 'DF', 'CO', ifelse(sgUF == 'RO' | sgUF == 'AC' | sgUF == 'PA' | sgUF == 'AM' | sgUF == 'RR' | sgUF == 'AP' | sgUF == 'TO', 'N', 'NA')))))) %>% group_by(Regiao) %>% summarise(Gastos = sum(valorLíquido)) %>%  arrange(Gastos)
+totalGasto <- gastos %>% filter(sgUF != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(GastoTotal = sum(valorLíquido))
+
+
+gastosPorRegiao <- gastos %>%  filter(sgUF != "NA", valorDocumento > 0, valorLíquido > 0) %>% mutate(Regiao = ifelse(sgUF == 'PB' | sgUF == 'PE' | sgUF == 'RN' | sgUF == 'CE' | sgUF == 'PI' | sgUF == 'BA' | sgUF == 'MA' | sgUF == 'SE' | sgUF == 'AL', 'NE', ifelse(sgUF == 'ES' | sgUF == 'RJ' | sgUF == 'MG' | sgUF == 'SP', 'SE', ifelse(sgUF == 'RS' | sgUF == 'PR' | sgUF == 'SC', 'S', ifelse(sgUF == 'MS' | sgUF == 'GO' | sgUF == 'MT' | sgUF == 'DF', 'CO', ifelse(sgUF == 'RO' | sgUF == 'AC' | sgUF == 'PA' | sgUF == 'AM' | sgUF == 'RR' | sgUF == 'AP' | sgUF == 'TO', 'N', 'NA')))))) %>% group_by(Regiao) %>% summarise(Gastos = (sum(valorLíquido)/totalGasto$GastoTotal) * 100) %>%  arrange(Gastos)
                                    
 
 regiaolbls <- gastosPorRegiao$Regiao
+regiaolbls <- paste(lbls, round(gastosPorRegiao$Gastos, 2))
+regiaolbls <- paste(lbls,"%",sep="")
 
 pie(gastosPorRegiao$Gastos, labels = regiaolbls, main = "Percentual de gastos da CEAP por região")
 
@@ -39,15 +44,15 @@ ggplot(formaDeUsoPorCategoria, aes(x = "", y = valorLíquido, fill=TipoDespesa))
 ```
 ```{r}
 
-totalGasto <- gastos %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(GastoTotal = sum(valorLíquido))
+totalGastoParaiba <- gastos %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(GastoTotal = sum(valorLíquido))
 
-porcentagemGastaPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = ((sum(valorLíquido)/totalGasto$GastoTotal)) * 100) %>% arrange(Gastos)
+porcentagemGastaPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = ((sum(valorLíquido)/totalGastoParaiba$GastoTotal)) * 100) %>% arrange(Gastos)
 
-lbls <- porcentagemGastaPorParlamentar$Parlamentar
-lbls <- paste(lbls, round(porcentagemGastaPorParlamentar$Gastos, 2))
+lbls <- tail(porcentagemGastaPorParlamentar$Parlamentar, n=14)
+lbls <- paste(lbls, round(tail(porcentagemGastaPorParlamentar$Gastos, n=14), 2))
 lbls <- paste(lbls,"%",sep="")
 
-pie(porcentagemGastaPorParlamentar$Gastos, labels = lbls, cex=0.7)
+pie(tail(porcentagemGastaPorParlamentar$Gastos, n=14), labels = lbls, cex=0.7)
 
 
 ```
