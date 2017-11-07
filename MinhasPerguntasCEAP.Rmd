@@ -1,0 +1,48 @@
+---
+title: "AnaliseCEAP"
+author: "Adbys Vasconcelos"
+date: "06/11/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(sqldf)
+
+gastos <- read.csv("dadosCEAP.csv")
+
+
+gastos$valorGlosa <- as.numeric(sub(",", ".", gastos$valorGlosa, fixed = TRUE))
+
+formaDeUsoPorCategoria <- gastos %>% group_by(TipoDespesa = tipoDespesa) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) 
+
+gastoPorEstado <- gastos %>% group_by(Estado = sgUF) %>% filter(Estado != "NA", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = sum(valorLíquido)) %>% arrange(Gastos)
+
+
+gastosPorRegiao <- gastos %>%  filter(sgUF != "NA", valorDocumento > 0, valorLíquido > 0) %>% mutate(Regiao = ifelse(sgUF == 'PB' | sgUF == 'PE' | sgUF == 'RN' | sgUF == 'CE' | sgUF == 'PI' | sgUF == 'BA' | sgUF == 'MA' | sgUF == 'SE' | sgUF == 'AL', 'NE', ifelse(sgUF == 'ES' | sgUF == 'RJ' | sgUF == 'MG' | sgUF == 'SP', 'SE', ifelse(sgUF == 'RS' | sgUF == 'PR' | sgUF == 'SC', 'S', ifelse(sgUF == 'MS' | sgUF == 'GO' | sgUF == 'MT' | sgUF == 'DF', 'CO', ifelse(sgUF == 'RO' | sgUF == 'AC' | sgUF == 'PA' | sgUF == 'AM' | sgUF == 'RR' | sgUF == 'AP' | sgUF == 'TO', 'N', 'NA')))))) %>% group_by(Regiao) %>% summarise(Gastos = sum(valorLíquido)) %>%  arrange(Gastos)
+                                   
+
+pie(gastosPorRegiao$Gastos, labels = gastosPorRegiao$Regiao)
+
+
+
+
+ggplot(data = formaDeUsoPorCategoria, aes(x = TipoDespesa, y = valorLíquido)) + geom_boxplot()+  labs(title = "Distribuição dos gastos da CEAP no Estado da Paraíba", x = "Tipo de Gasto", y = "Gasto(R$)") + coord_flip()
+
+
+```
+```{r}
+
+totalGasto <- gastos %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(GastoTotal = sum(valorLíquido))
+
+porcentagemGastaPorParlamentar <- gastos %>% group_by(Parlamentar = nomeParlamentar) %>% filter(sgUF == "PB", valorDocumento > 0, valorLíquido > 0) %>% summarise(Gastos = (sum(valorLíquido)/totalGasto$GastoTotal) * 100) %>% arrange(Gastos)
+
+
+pie(porcentagemGastaPorParlamentar$Gastos, labels = porcentagemGastaPorParlamentar$Parlamentar)
+
+```
+
