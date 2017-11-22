@@ -12,8 +12,32 @@ library(ggplot2)
 library(reshape2)
 
 
-dados <- read.csv("/eleicoes2014.csv") 
+dados <- read.csv("eleicoes2014.csv", fileEncoding = 'latin1')
 
+dados <- dados %>% select(-cargo, -nome, -numero_cadidato, -sequencial_candidato)
+
+
+modelo2 <- dados %>% select(quantidade_despesas, votos, estado_civil, media_despesa, quantidade_despesas, recursos_proprios, quantidade_doadores, partido)
+
+modelo3 <- modelo2 %>% select(quantidade_despesas, votos, media_despesa, quantidade_despesas, recursos_proprios, quantidade_doadores, partido)
+
+modelo4 <- modelo3 %>% select(quantidade_despesas, votos, media_despesa, quantidade_despesas, recursos_proprios, quantidade_doadores)
+
+modeloVotos <- lm(votos ~ .,  dados, na.action = na.omit)
+
+modeloVotos2 <- lm(votos ~ .,  modelo2)
+
+modeloVotos3 <- lm(votos ~ .,  modelo3)
+
+modeloVotos4 <- lm(votos ~ .,  modelo4)
+
+
+summary(modeloVotos4)
+
+summary(modeloVotos3)
+summary(modeloVotos2)
+
+summary(modeloVotos)
 
 ```
 
