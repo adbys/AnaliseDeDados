@@ -10,34 +10,40 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
 library(reshape2)
+library(forecast)
 
 
 dados <- read.csv("eleicoes2014.csv", fileEncoding = 'latin1')
 
 dados <- dados %>% select(-cargo, -nome, -numero_cadidato, -sequencial_candidato)
 
-
-modelo2 <- dados %>% select(quantidade_despesas, votos, estado_civil, media_despesa, quantidade_despesas, recursos_proprios, quantidade_doadores, partido)
-
-modelo3 <- modelo2 %>% select(quantidade_despesas, votos, media_despesa, quantidade_despesas, recursos_proprios, quantidade_doadores, partido)
-
-modelo4 <- modelo3 %>% select(quantidade_despesas, votos, media_despesa, quantidade_despesas, recursos_proprios, quantidade_doadores)
+colSums(is.na(dados))
 
 modeloVotos <- lm(votos ~ .,  dados, na.action = na.omit)
 
-modeloVotos2 <- lm(votos ~ .,  modelo2)
-
-modeloVotos3 <- lm(votos ~ .,  modelo3)
-
-modeloVotos4 <- lm(votos ~ .,  modelo4)
+summary(modeloVotos)
 
 
-summary(modeloVotos4)
 
-summary(modeloVotos3)
+dados2 <- dados %>% select(-recursos_de_pessoas_físicas, -recursos_de_outros_candidatos.comites, -recursos_de_pessoas_juridicas, -recursos_de_partidos, -recursos_proprios)
+
+colSums(is.na(dados2))
+
+modeloVotos2 <- lm(votos ~ .,  dados2)
+
 summary(modeloVotos2)
 
-summary(modeloVotos)
+
+dados3 <- dados2 %>% mutate(setor_receita_genero_alimenticio = ifelse(setor_economico_receita == "Comércio atacadista de produtos alimentícios em geral", TRUE, FALSE)) %>% mutate(masculino = ifelse(sexo == "MASCULINO", TRUE, FALSE)) %>% mutate(estado_relevante = ifelse(UF == "CE" | UF == "BA" | UF == "MA" | UF == "PE" | UF == "PB" | UF == "PA" | UF == "RN" | UF == "RS" | UF == "SC" | UF == "SP", TRUE, FALSE)) %>% mutate(partido_relevante = ifelse(partido == "PEN" | partido == "PHS" | partido == "PMN" | partido == "PRP" | partido == "PRTB" | partido == "PSL" | partido == "PTC" | partido == "SD" | partido == "PV", TRUE, FALSE)) %>% select(-setor_economico_despesa, -setor_economico_receita, -idade, -grau, -sexo, -estado_civil, -UF, -partido)
+
+modeloVotos3 <- lm(votos ~ .,  dados3)
+
+summary(modeloVotos3)
+
+residuos <- residuals(modeloVotos3)
+
+plot(dados3, residuos) 
+
 
 ```
 
