@@ -5,12 +5,13 @@ date: "22 de novembro de 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, fig.width=20,fig.height=9}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(reshape2)
-library(forecast)
+library(corrplot)
 
 
 dados <- read.csv("eleicoes2014.csv", fileEncoding = 'latin1')
@@ -34,15 +35,48 @@ modeloVotos2 <- lm(votos ~ .,  dados2)
 summary(modeloVotos2)
 
 
+
 dados3 <- dados2 %>% mutate(setor_receita_genero_alimenticio = ifelse(setor_economico_receita == "Comércio atacadista de produtos alimentícios em geral", TRUE, FALSE)) %>% mutate(masculino = ifelse(sexo == "MASCULINO", TRUE, FALSE)) %>% mutate(estado_relevante = ifelse(UF == "CE" | UF == "BA" | UF == "MA" | UF == "PE" | UF == "PB" | UF == "PA" | UF == "RN" | UF == "RS" | UF == "SC" | UF == "SP", TRUE, FALSE)) %>% mutate(partido_relevante = ifelse(partido == "PEN" | partido == "PHS" | partido == "PMN" | partido == "PRP" | partido == "PRTB" | partido == "PSL" | partido == "PTC" | partido == "SD" | partido == "PV", TRUE, FALSE)) %>% select(-setor_economico_despesa, -setor_economico_receita, -idade, -grau, -sexo, -estado_civil, -UF, -partido)
 
 modeloVotos3 <- lm(votos ~ .,  dados3)
 
 summary(modeloVotos3)
 
-residuos <- residuals(modeloVotos3)
 
-plot(dados3, residuos) 
+newdatacor <- cor(dados3)
+corrplot(newdatacor)
+
+
+dados3$residuo <- residuals(modeloVotos3)
+dados3$predicao <- predict(modeloVotos3)
+
+dados3 %>% 
+  gather(key = "iv", value = "x", -votos, -predicao, -residuo) %>%  # Get data into shape
+  ggplot(aes(x = x, y = votos)) +  # Note use of `x` here and next line
+  geom_segment(aes(xend = x, yend = predicao), alpha = .2) +
+  geom_point(aes(color = residuo)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
+  guides(color = FALSE) +
+  geom_point(aes(y = predicao), shape = 1) +
+  facet_grid(~ iv, scales = "free") +  # Split panels here by `iv`
+  theme_bw()
+
+
+
+
+
+dados3 %>%
+  gather(-votos, key = "var", value = "value") %>%
+  ggplot(aes(x = value, y = votos)) +
+  geom_point() +
+  stat_smooth() +
+  facet_grid(~ var, scales = "free") +
+  theme_bw()
+
+
+
+
+
 
 
 ```
