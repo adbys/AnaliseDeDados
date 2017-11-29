@@ -5,98 +5,112 @@ date: "22 de novembro de 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE, fig.width=20,fig.height=9}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(reshape2)
 library(corrplot)
 
+```
 
+Dispomos dos dados referentes a campanha eleitoral de deputado federal das eleições do ano de 2014.
+Queremos investigar se as variáveis contidas nesses dados explicam a votação que cada candidato obteve.
+Fazendo uma análise dos dados podemos perceber que muitas colunas dos dados possuem valor na.
+
+```{r}
 dados <- read.csv("eleicoes2014.csv", fileEncoding = 'latin1')
-
-dados <- dados %>% select(-cargo, -nome, -numero_cadidato, -sequencial_candidato)
 
 colSums(is.na(dados))
 
-modeloVotos <- lm(votos ~ .,  dados, na.action = na.omit)
+```
+
+Percebemos que as colunas recursos_de_outros_candidatos.comites, recursos_de_pessoas_físicas, recursos_proprios, recursos_de_partidos, recursos_de_pessoas_juridicas possuem muitos valores desconhecidos, desta forma esses dados não serão muito úteis para gerarmos um modelo que explique a votação que cada candidato obteve.
+Continuando a análise dos dados também percebemos que os dados cargo, nome, numero_cadidato, sequencial_candidato não são boas variáveis para explicar a votação dos candidatos. Eliminando os dados que não serão utilizados geramos um modelo de regressão linear com os dados que sobraram:
+
+```{r}
+dados <- dados %>% select(-cargo, -nome, -numero_cadidato, -sequencial_candidato, -recursos_de_pessoas_físicas, -recursos_de_outros_candidatos.comites, -recursos_de_pessoas_juridicas, -recursos_de_partidos, -recursos_proprios)
+
+modeloVotos <- lm(votos ~ .,  dados)
 
 summary(modeloVotos)
 
+```
 
 
-dados2 <- dados %>% select(-recursos_de_pessoas_físicas, -recursos_de_outros_candidatos.comites, -recursos_de_pessoas_juridicas, -recursos_de_partidos, -recursos_proprios)
 
-colSums(is.na(dados2))
+Um modelo de regressão múltipla com todas as variáveis é plausível para explicar a variação em y (número de votos)? Justifique sua resposta.
 
-modeloVotos2 <- lm(votos ~ .,  dados2)
+
+Com base nos dados obtidos quando geramos a regressão linear tiramos as seguintes conclusões:
+
+1- A estatística F (F-statistic) nos informa a respeito do teste de hipótese no qual pelo menos um coeficiente das variáveis preditoras possui valor diferente de zero. Ou seja, pelo menos uma variável preditora que está relacionada com a variável que nós desejamos prever. Como o valor da estatística F é 2767 >>> 1 podemos assumir que há pelo menos uma variável preditora que explica bem nossa variável alvo.
+2- O coeficiente Rˆ2 ajustado (Adjusted R-squared) é outro indíce que merece destaque. Esse indíce mede quão bem o modelo explica a variabilidade dos dados com relação a variável que desejamos prever. O valor de 0.4457 é um valor bom que significa que com o nosso modelo gerado conseguimos explicar 44.57% dos nossos dados. 
+
+Todas as variáveis são úteis para o modelo de regressão? Há variáveis redudantes? Justifique sua resposta em ambos os casos.
+
+O p-valor(p-value) é uma probabilidade que nos dá indícios sobre a hipótese nula. Se quisermos um indíce de 95% de confiança para o nosso modelo preditor, um p-valor menor que 0.05 é considerado satisfatório e indica que a variável é uma boa preditora no modelo. Como nem todas as variáveis possuem um p-valor menor ou igual a 0.05, podemos afirmar que nem todas as variáveis são boas para o modelo.  
+
+Desta forma analisando os dados da regressão percebemos que da coluna setor_economico_receita a única variável relevante é: "Comércio atacadista de produtos alimentícios em geral", quanto ao sexo do candidado percebemos que apenas a variável "MASCULINO" é relevante para o modelo. Só alguns partidos são relevantes para nosso modelo: PEN", "PHS", "PMN", "PRP", "PRTB", "PSL", "PTC", "SD" e "PV". Já quanto aos estados, os relevantes são: "CE", "BA", "MA", "PE", "PB", "PA", "RN", "RS", "SC" e "SP".
+
+
+```{r}
+
+dados <- dados %>% mutate(setor_receita_genero_alimenticio = ifelse(setor_economico_receita == "Comércio atacadista de produtos alimentícios em geral", TRUE, FALSE)) %>% mutate(masculino = ifelse(sexo == "MASCULINO", TRUE, FALSE)) %>% mutate(estado_relevante = ifelse(UF == "CE" | UF == "BA" | UF == "MA" | UF == "PE" | UF == "PB" | UF == "PA" | UF == "RN" | UF == "RS" | UF == "SC" | UF == "SP", TRUE, FALSE)) %>% mutate(partido_relevante = ifelse(partido == "PEN" | partido == "PHS" | partido == "PMN" | partido == "PRP" | partido == "PRTB" | partido == "PSL" | partido == "PTC" | partido == "SD" | partido == "PV", TRUE, FALSE)) %>% select(-setor_economico_despesa, -setor_economico_receita, -idade, -grau, -sexo, -estado_civil, -UF, -partido)
+
+
+newdatacor <- cor(dados)
+corrplot(newdatacor)
+
+
+
+```
+
+
+Pelo correlograma acima podemos perceber que as variáveis total_receita e total_despesa estão fortemente correlacionadas. E quantidade_fornecedores e quantidade_despesas também estão fortemente correlacionadas.
+
+No caso de haver variáveis pouco explicativas e/ou redudantes, construa um novo modelo sem essas variáveis e o compare ao modelo com todas as variáveis (e.g. em termos de R2 e RSE).
+
+```{r}
+dados <- dados %>% select(-total_despesa, -quantidade_fornecedores)
+
+modeloVotos2 <- lm(votos ~ .,  dados)
 
 summary(modeloVotos2)
 
 
+```
 
-dados3 <- dados2 %>% mutate(setor_receita_genero_alimenticio = ifelse(setor_economico_receita == "Comércio atacadista de produtos alimentícios em geral", TRUE, FALSE)) %>% mutate(masculino = ifelse(sexo == "MASCULINO", TRUE, FALSE)) %>% mutate(estado_relevante = ifelse(UF == "CE" | UF == "BA" | UF == "MA" | UF == "PE" | UF == "PB" | UF == "PA" | UF == "RN" | UF == "RS" | UF == "SC" | UF == "SP", TRUE, FALSE)) %>% mutate(partido_relevante = ifelse(partido == "PEN" | partido == "PHS" | partido == "PMN" | partido == "PRP" | partido == "PRTB" | partido == "PSL" | partido == "PTC" | partido == "SD" | partido == "PV", TRUE, FALSE)) %>% select(-setor_economico_despesa, -setor_economico_receita, -idade, -grau, -sexo, -estado_civil, -UF, -partido)
-
-modeloVotos3 <- lm(votos ~ .,  dados3)
-
-summary(modeloVotos3)
-
-
-newdatacor <- cor(dados3)
-corrplot(newdatacor)
-
-
-dados3$residuo <- residuals(modeloVotos3)
-dados3$predicao <- predict(modeloVotos3)
-
-dados3 %>% 
-  gather(key = "iv", value = "x", -votos, -predicao, -residuo) %>%  # Get data into shape
-  ggplot(aes(x = x, y = votos)) +  # Note use of `x` here and next line
-  geom_segment(aes(xend = x, yend = predicao), alpha = .2) +
-  geom_point(aes(color = residuo)) +
-  scale_color_gradient2(low = "blue", mid = "white", high = "red") +
-  guides(color = FALSE) +
-  geom_point(aes(y = predicao), shape = 1) +
-  facet_grid(~ iv, scales = "free") +  # Split panels here by `iv`
-  theme_bw()
+Percebemos que no modelo novo as estatísticas ficaram praticamente as mesmas com exceção da estatística F que diminuiu de valor pois no nosso novo modelos existem menos variáveis explicativas mas a estatística F continua um valor significamente maior que 1.
 
 
 
+Analise plots de resíduos e verifique se há tendências nos erros.
 
+```{r}
 
-dados3 %>%
-  gather(-votos, key = "var", value = "value") %>%
-  ggplot(aes(x = value, y = votos)) +
-  geom_point() +
-  stat_smooth() +
-  facet_grid(~ var, scales = "free") +
-  theme_bw()
+residuos <- residuals(modeloVotos2)
+predicao <- predict(modeloVotos2)
 
-
-
+plot(predicao, residuos)
 
 
 
 
 ```
 
-## R Markdown
+Pelo plot dos resíduos percebemos que os resíduos não possuem nenhuma tendencia de distribuição. Eles estão aleatoriamente distribuídos ao redor do valor zero, significando assim que o nosso modelos de regressão linear multipla foi uma boa escolha para predição da variável votos.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Quais variáveis conseguem explicar melhor o número de votos? Justifique sua resposta.
 
-```{r cars}
-summary(cars)
-```
+As variáveis que conseguem explicar melhor o número de votos são as variáveis com um menor p-valor e que não são redundantes. Para o nosso modelo as melhores variáveis foram: quantidade_doacoes, quantidade_doadoes, total_receita, media_receita, quantiade_despesas, media_despesa, setor_receita_genero_alimenticio, masculino, estado_relevante, partido_relevante.
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+
