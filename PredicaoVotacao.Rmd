@@ -1,0 +1,49 @@
+---
+title: "PredicaoVotacaoDeputados"
+author: "Adbys Vasconcelos"
+date: "11 de dezembro de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(lattice)
+library(caret)
+
+library(ggplot2)
+library(dplyr)
+```
+
+
+```{r}
+dados <- read.csv("eleicoes2014.csv", fileEncoding = 'latin1')
+
+dados <- dados %>% select(-cargo, -nome)
+
+fitControl <- trainControl( method = "repeatedcv",
+                            number=5,
+                            repeats=5)
+
+lambdaGrid <- expand.grid(lambda = 10 ^ seq(10, -6, length=10))
+
+modeloRidge <- train( votos ~ .,
+                      data = dados,
+                      method = 'ridge',
+                      na.action = na.omit,
+                      preProcess = c('scale','center', 'nzv'),
+                      tuneGrid = lambdaGrid)
+
+modeloLasso <- train( votos ~ .,
+                      data = dados,
+                      method = 'lasso',
+                      na.action = na.omit,
+                      preProcess = c('scale','center', 'nzv'),
+                      tuneGrid = lambdaGrid)
+
+
+
+modeloLasso
+modeloRidge
+```
+
