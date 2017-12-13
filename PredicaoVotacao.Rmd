@@ -9,11 +9,16 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(lattice)
+library(elasticnet)
 library(caret)
 
 library(ggplot2)
 library(dplyr)
+library(leaps)
 ```
+
+https://rpubs.com/njvijay/16444
+Tendo por base os dados da votaçao de Deputado Federal das eleições de 2014 queremos gerar um modelo de predição de votos. Utilizando os dados disponíveis, treinamos modelos utilizando regularização Ridge, Lasso e KNN. Possuímos 23 variáveis possíveis de explicar a quantidade de votos do candidato, utilizaremos todas as variáveis para treinarmos o modelo. 
 
 
 ```{r}
@@ -25,21 +30,109 @@ fitControl <- trainControl( method = "cv",
                             number=5,
                             search="random")
 
+lambdaGrid <- expand.grid(lambda = 10^seq(10, -2, length=100))
+
+
 modeloRidge <- train( votos ~ .,
                       data = dados,
                       method = 'ridge',
                       na.action = na.omit,
-                      preProcess = c('scale','center', 'nzv'))
+                      preProcess = c('scale','center', 'nzv'),
+                      trControl = fitControl,
+                      tuneGrid = lambdaGrid)
 
 modeloLasso <- train( votos ~ .,
                       data = dados,
                       method = 'lasso',
                       na.action = na.omit,
-                      preProcess = c('scale','center', 'nzv'))
+                      preProcess = c('scale','center', 'nzv'),
+                      trControl = fitControl,
+                      tuneGrid = lambdaGrid)
 
+modeloKnn <- train( votos ~ .,
+                      data = dados,
+                      method = 'knn',
+                      na.action = na.omit,
+                      preProcess = c('scale','center', 'nzv'),
+                      trControl = fitControl,
+                      tuneLength = 15)
 
+```
 
-modeloLasso
+Iremos agora avaliar cada modelo gerado:
+
+Modelo Ridge:
+
+```{r}
 modeloRidge
 ```
+
+Modelo Lasso:
+
+```{r}
+modeloLasso
+```
+
+Modelo KNN:
+
+```{r}
+modeloKnn
+```
+
+Uma forma de avaliarmos qual o melhor modelo gerado é avaliarmos o RMSE.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Iremos agora comparar a importancias das variáveis para o modelo Ridge e Lasso:
+
+Importância das variáveis para o modelo Lasso:
+
+```{r}
+ggplot(varImp(modeloLasso))
+```
+
+Importância das variáveis para o modelo Ridge:
+
+```{r}
+ggplot(varImp(modeloRidge))
+```
+
+Pelos gráficos acima percebemos que as variáveis possuem a mesma importância tanto para o modelo Lasso tanto para Ridge.
+As variáveis mais importantes segundo nossos modelos são: total_receita, recursos_de_partidos, recursos_de_pessoa_juridicas e total_depesa. 
+
+Analisando os valores dos coeficientes de cada varável para o modelo lasso:
+
+```{r}
+predict.enet(modeloLasso$finalModel, type='coefficients', s=modeloLasso$bestTune$fraction, mode='fraction')
+```
+
+Pela tabela acima percebemos que nenhuma variável possui valor zero, portanto nenhuma variável foi excluída do modelo.
+
+Utilizaremos agora o melhor modelo de predição e iremos realizar o treino do mesmo utilizando todos os dados disponíveis.
+
+
+```{r}
+
+train
+
+modeloKnn <- train( votos ~ .,
+                      data = dados,
+                      method = 'knn',
+                      na.action = na.omit,
+                      preProcess = c('scale','center', 'nzv')
+                      )
+
+```
+
 
