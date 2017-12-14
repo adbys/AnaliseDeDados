@@ -30,8 +30,6 @@ fitControl <- trainControl( method = "cv",
                             number=5,
                             search="random")
 
-lambdaGrid <- expand.grid(lambda = 10^seq(10, -2, length=100))
-
 
 modeloRidge <- train( votos ~ .,
                       data = dados,
@@ -39,7 +37,7 @@ modeloRidge <- train( votos ~ .,
                       na.action = na.omit,
                       preProcess = c('scale','center', 'nzv'),
                       trControl = fitControl,
-                      tuneGrid = lambdaGrid)
+                      tuneLength = 50)
 
 modeloLasso <- train( votos ~ .,
                       data = dados,
@@ -47,7 +45,7 @@ modeloLasso <- train( votos ~ .,
                       na.action = na.omit,
                       preProcess = c('scale','center', 'nzv'),
                       trControl = fitControl,
-                      tuneGrid = lambdaGrid)
+                      tuneLength = 50)
 
 modeloKnn <- train( votos ~ .,
                       data = dados,
@@ -55,7 +53,7 @@ modeloKnn <- train( votos ~ .,
                       na.action = na.omit,
                       preProcess = c('scale','center', 'nzv'),
                       trControl = fitControl,
-                      tuneLength = 15)
+                      tuneLength = 50)
 
 ```
 
@@ -79,20 +77,7 @@ Modelo KNN:
 modeloKnn
 ```
 
-Uma forma de avaliarmos qual o melhor modelo gerado é avaliarmos o RMSE.
-
-
-
-
-
-
-
-
-
-
-
-
-
+Uma forma de avaliarmos qual o melhor modelo gerado é avaliarmos o RMSE. O RMSE, Root Mean Square Error, é uma medida freqüentemente usada que calcula a diferença entre valores previstos por um modelo e os valores realmente observados da variável em estudo. Desta forma percebemos que o modelos com menor RMSE é o KNN com RSME de 71099.92 utilizando um k = 21.
 
 Iremos agora comparar a importancias das variáveis para o modelo Ridge e Lasso:
 
@@ -117,21 +102,18 @@ Analisando os valores dos coeficientes de cada varável para o modelo lasso:
 predict.enet(modeloLasso$finalModel, type='coefficients', s=modeloLasso$bestTune$fraction, mode='fraction')
 ```
 
-Pela tabela acima percebemos que nenhuma variável possui valor zero, portanto nenhuma variável foi excluída do modelo.
+Pela tabela acima percebemos que algumas variáveis possuem valor zero. Estas variáveis com coeficiente zero são as variáveis que são descartadas pelo modelo Lasso, desta forma os valores estado_civil DIVORCIADO(A), grau ESINO MÉDIO COMPLETO, idade, recursos_de_pessoas_juridicas, recursos_de_partidos, total_receita, partido PSB, UF RS são irrelevantes para o modelo de predição  
 
 Utilizaremos agora o melhor modelo de predição e iremos realizar o treino do mesmo utilizando todos os dados disponíveis.
 
 
 ```{r}
 
-train
-
 modeloKnn <- train( votos ~ .,
                       data = dados,
                       method = 'knn',
                       na.action = na.omit,
-                      preProcess = c('scale','center', 'nzv')
-                      )
+                      preProcess = c('scale','center', 'nzv'))
 
 ```
 
